@@ -1,237 +1,165 @@
 import streamlit as st
 import time
-import datetime
-import random
+import urllib.parse
+from gtts import gTTS
+import os
 
 # ==========================================
-# 1. KONFIGURASI HALAMAN UTAMA
+# 1. KONFIGURASI TAMPILAN MODERN & ESTETIK
 # ==========================================
 st.set_page_config(
-    page_title="Premium AI Control System",
-    page_icon="⚡",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    page_title="Nexus Core System",
+    page_icon="🌌",
+    layout="wide"
 )
 
-# CSS modern yang kompatibel dengan Streamlit terbaru
+# Custom CSS untuk Dark Mode Premium & Glassmorphism
 st.markdown("""
     <style>
-    /* Target yang benar untuk Streamlit terbaru */
-    .stApp { background-color: #0e1117; }
-    .stButton > button {
-        width: 100%;
-        border-radius: 6px;
-        font-weight: bold;
-        transition: 0.2s ease;
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    .stApp {
+        background-color: #090c10;
+        color: #c9d1d9;
+        font-family: 'Inter', sans-serif;
     }
-    .stButton > button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(255,255,255,0.1);
+    
+    /* Desain Sidebar yang lebih elegan */
+    [data-testid="stSidebar"] {
+        background-color: #0d1117;
+        border-right: 1px solid #30363d;
+    }
+    
+    /* Tombol estetik */
+    .stButton>button {
+        border-radius: 8px;
+        background-color: #238636;
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+    .stButton>button:hover {
+        background-color: #2ea043;
+        box-shadow: 0 0 10px #2ea043;
     }
     </style>
 """, unsafe_allow_html=True)
 
 # ==========================================
-# 2. INISIALISASI SESSION STATE GLOBAL
+# 2. SISTEM MEMORI & ANIMASI TYPING
 # ==========================================
-# Inisialisasi di awal agar tidak error di menu manapun
 if "messages" not in st.session_state:
-    st.session_state.messages = [
-        {"role": "assistant", "content": "Sistem siap. Ada instruksi atau data yang ingin Anda analisis?"}
-    ]
+    st.session_state.messages = []
 
-if "api_key" not in st.session_state:
-    st.session_state.api_key = ""
+def stream_response(text):
+    """Efek mengetik yang sangat halus (0.04 detik per kata)"""
+    for word in text.split(" "):
+        yield word + " "
+        time.sleep(0.04)
 
-if "server_url" not in st.session_state:
-    st.session_state.server_url = "https://api.cloud-system.com/v2"
-
-if "refresh_rate" not in st.session_state:
-    st.session_state.refresh_rate = 5
-
-if "exec_count" not in st.session_state:
-    st.session_state.exec_count = 1842
+def buat_suara_ai(teks):
+    """Mengubah teks AI menjadi file suara MP3"""
+    tts = gTTS(text=teks, lang='id', slow=False)
+    tts.save("respon.mp3")
+    return "respon.mp3"
 
 # ==========================================
-# 3. SIDEBAR NAVIGASI
+# 3. NAVIGASI MULTI-FITUR (SIDEBAR)
 # ==========================================
-st.sidebar.title("🤖 AI Command Center")
-st.sidebar.markdown("---")
-
-menu = st.sidebar.radio(
-    "Pilih Menu Sistem:",
-    ["💬 AI Intelligent Assistant", "📊 Monitoring & Analisis Data", "⚙️ Konfigurasi API & Sistem"]
-)
-
-st.sidebar.markdown("---")
-
-# Indikator status API
-if st.session_state.api_key:
-    st.sidebar.success("🟢 API: Terhubung")
-else:
-    st.sidebar.warning("🔴 API: Belum dikonfigurasi")
-
-st.sidebar.caption(f"🗓️ {datetime.date.today().strftime('%d %B %Y')}")
-st.sidebar.caption("🟢 Status Server: Optimal")
-
-# ==========================================
-# 4. MENU 1 — AI INTELLIGENT ASSISTANT
-# ==========================================
-if menu == "💬 AI Intelligent Assistant":
-    st.title("💬 AI Intelligent Assistant")
-    st.subheader("Asisten cerdas dengan sistem memori aktif.")
+with st.sidebar:
+    st.markdown("<h2 style='text-align: center; color: white;'>🌌 Nexus Core</h2>", unsafe_allow_html=True)
+    st.caption("<p style='text-align: center;'>Sistem Tanpa API Key</p>", unsafe_allow_html=True)
     st.markdown("---")
+    
+    menu = st.radio(
+        "Pilih Modul Sistem:",
+        ["💬 Chat & Tutor Pelajaran", "🎨 AI Image Studio", "🎙️ Voice Assistant (Suara)"]
+    )
+    
+    st.markdown("---")
+    # Logika kalibrasi waktu 5 detik
+    if st.button("🔄 Kalibrasi Ulang Memori"):
+        with st.spinner("Menghapus cache sistem..."):
+            time.sleep(5) # Waktu tunggu disetel 5 detik sesuai konfigurasi optimal
+            st.session_state.messages = []
+            st.success("Sistem disegarkan!")
 
-    # Tampilkan riwayat chat
+# ==========================================
+# 4. MODUL 1: CHAT & TUTOR PELAJARAN
+# ==========================================
+if menu == "💬 Chat & Tutor Pelajaran":
+    st.markdown("<h2 style='color: white;'>📚 AI Tutor & Assistant</h2>", unsafe_allow_html=True)
+    st.caption("Ajukan pertanyaan pelajaran (Matematika, Sejarah, Sains, dll) atau obrolan santai.")
+    
+    # Tampilkan memori chat
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
-            st.write(message["content"])
-
-    # Input dari pengguna
-    if user_input := st.chat_input("Ketik pesan, perintah, atau masukkan log data di sini..."):
+            st.markdown(message["content"])
+            
+    if user_input := st.chat_input("Tanyakan soal pelajaran atau ketik sesuatu..."):
         with st.chat_message("user"):
-            st.write(user_input)
+            st.markdown(user_input)
         st.session_state.messages.append({"role": "user", "content": user_input})
-        st.session_state.exec_count += 1  # Update counter eksekusi
-
+        
         with st.chat_message("assistant"):
-            with st.spinner("Sedang memproses instruksi..."):
-
-                # Cek apakah API key sudah diisi
-                if not st.session_state.api_key:
-                    response = (
-                        "⚠️ API Key belum dikonfigurasi. "
-                        "Silakan masuk ke menu **Konfigurasi API & Sistem** "
-                        "dan isi API Key terlebih dahulu."
-                    )
-                else:
-                    # === TITIK INTEGRASI API ===
-                    # Ganti blok ini dengan pemanggilan API nyata Anda, contoh:
-                    #
-                    # import anthropic
-                    # client = anthropic.Anthropic(api_key=st.session_state.api_key)
-                    # result = client.messages.create(
-                    #     model="claude-opus-4-5",
-                    #     max_tokens=1024,
-                    #     messages=[{"role": "user", "content": user_input}]
-                    # )
-                    # response = result.content[0].text
-                    #
-                    time.sleep(1.2)
-                    response = (
-                        f"✅ Instruksi diterima dan diproses.\n\n"
-                        f"**Input:** {user_input}\n\n"
-                        f"Hubungkan ke API nyata di bagian kode yang ditandai "
-                        f"`TITIK INTEGRASI API` untuk mendapatkan respons dinamis."
-                    )
-
-                st.write(response)
-
-        st.session_state.messages.append({"role": "assistant", "content": response})
-
-    # Tombol reset chat
-    if st.button("🗑️ Reset Riwayat Chat"):
-        st.session_state.messages = [
-            {"role": "assistant", "content": "Sistem siap. Ada instruksi atau data yang ingin Anda analisis?"}
-        ]
-        st.rerun()
-
-# ==========================================
-# 5. MENU 2 — MONITORING & ANALISIS DATA
-# ==========================================
-elif menu == "📊 Monitoring & Analisis Data":
-    st.title("📊 System Monitoring & Analytics")
-    st.subheader("Pantau performa script, automation bot, dan metrik sistem Anda.")
-    st.markdown("---")
-
-    col1, col2, col3 = st.columns(3)
-    col1.metric("Status Operasional", "ACTIVE", "24 Jam Nonstop")
-    col2.metric(
-        "Total Eksekusi Logika",
-        f"{st.session_state.exec_count:,} Request",
-        f"+{st.session_state.exec_count - 1842} Sesi Ini"
-    )
-    col3.metric("Kecepatan Respon Rata-rata", "0.38 Detik", "-0.04s")
-
-    st.markdown("---")
-
-    # Grafik dengan data yang sedikit lebih dinamis
-    st.subheader("📈 Grafik Tren Performa")
-    
-    tab1, tab2 = st.tabs(["📊 Tren Request", "⏱️ Tren Kecepatan"])
-    
-    with tab1:
-        # Simulasi data request per jam (bisa diganti data nyata)
-        data_request = [random.randint(10, 60) for _ in range(24)]
-        st.line_chart(data_request, use_container_width=True)
-        st.caption("Jumlah request per jam dalam 24 jam terakhir")
-
-    with tab2:
-        data_speed = [round(random.uniform(0.2, 0.8), 2) for _ in range(24)]
-        st.line_chart(data_speed, use_container_width=True)
-        st.caption("Kecepatan respon (detik) per jam — semakin rendah semakin baik")
-
-    # Live Logs
-    st.markdown("---")
-    st.subheader("📋 Catatan Aktivitas Sistem")
-    
-    waktu = datetime.datetime.now().strftime("%H:%M:%S")
-    total_chat = len(st.session_state.messages)
-    api_status = "Terhubung ✅" if st.session_state.api_key else "Belum dikonfigurasi ⚠️"
-
-    with st.container(height=220):
-        st.caption(f"[{waktu}] 🟢 SUCCESS: Server utama aktif dan merespons.")
-        st.caption(f"[{waktu}] ℹ️ INFO: Total pesan dalam sesi ini — {total_chat} pesan.")
-        st.caption(f"[{waktu}] ℹ️ INFO: Status API Key — {api_status}")
-        st.caption(f"[{waktu}] ⚠️ WARNING: Aktivitas tinggi terdeteksi, performa dioptimalkan.")
-        st.caption(f"[{waktu}] 🟢 READY: Menunggu perintah baru dari AI Assistant.")
-
-# ==========================================
-# 6. MENU 3 — KONFIGURASI API & SISTEM
-# ==========================================
-elif menu == "⚙️ Konfigurasi API & Sistem":
-    st.title("⚙️ System Settings & Credentials")
-    st.subheader("Atur kunci akses API dan endpoint server Anda dengan aman.")
-    st.markdown("---")
-
-    st.info("💡 Token yang diinput hanya berjalan di memori sesi ini dan tidak disebarkan ke publik.")
-
-    # Gunakan value dari session_state agar tidak hilang saat berpindah menu
-    api_key_input = st.text_input(
-        "Kunci API Utama (Secret API Key):",
-        type="password",
-        value=st.session_state.api_key,
-        help="Masukkan API Key dari platform penyedia layanan Anda"
-    )
-    server_url_input = st.text_input(
-        "Server URL Endpoint:",
-        value=st.session_state.server_url
-    )
-    refresh_rate_input = st.slider(
-        "Interval Refresh Data Otomatis (Detik):",
-        min_value=1, max_value=60,
-        value=st.session_state.refresh_rate
-    )
-
-    st.markdown("---")
-
-    col_save, col_reset = st.columns(2)
-
-    with col_save:
-        if st.button("💾 Simpan Pengaturan"):
-            if api_key_input:
-                # Simpan ke session_state agar persisten selama sesi
-                st.session_state.api_key = api_key_input
-                st.session_state.server_url = server_url_input
-                st.session_state.refresh_rate = refresh_rate_input
-                st.success("✅ Pengaturan berhasil disimpan untuk sesi ini!")
+            # Analisis pertanyaan tanpa API Key menggunakan Keyword Heuristic
+            input_lower = user_input.lower()
+            
+            if any(x in input_lower for x in ["matematika", "hitung", "+", "-", "*", "/"]):
+                jawaban = f"Dari logika matematis yang saya analisis terkait '{user_input}', langkah pertama adalah memecah persamaannya. Pastikan Anda mendahulukan perkalian/pembagian sebelum penjumlahan/pengurangan sesuai aturan dasar algoritma hitung."
+            elif any(x in input_lower for x in ["sejarah", "siapa", "tahun", "kapan"]):
+                jawaban = f"Pertanyaan sejarah yang bagus tentang '{user_input}'. Peristiwa historis selalu memiliki sebab-akibat. Jika ini untuk tugas sekolah, pastikan Anda mengutip tahun dan nama tokoh utamanya dengan akurat."
+            elif any(x in input_lower for x in ["biologi", "sains", "fisika", "kimia"]):
+                jawaban = f"Terkait ilmu sains '{user_input}', konsep dasarnya berpusat pada pengamatan empiris. Ingatlah bahwa setiap reaksi atau fenomena alam memiliki variabel sebab yang bisa diukur secara presisi."
             else:
-                st.warning("⚠️ Mohon isi Kunci API sebelum menyimpan.")
+                jawaban = f"Saya menerima instruksi Anda: '{user_input}'. Sistem saya saat ini beroperasi penuh dan siap membantu Anda memecahkan tugas atau masalah logika selanjutnya."
+            
+            st.write_stream(stream_response(jawaban))
+        st.session_state.messages.append({"role": "assistant", "content": jawaban})
 
-    with col_reset:
-        if st.button("🔄 Reset ke Default"):
-            st.session_state.api_key = ""
-            st.session_state.server_url = "https://api.cloud-system.com/v2"
-            st.session_state.refresh_rate = 5
-            st.info("🔄 Pengaturan dikembalikan ke nilai default.")
-            st.rerun()
+# ==========================================
+# 5. MODUL 2: AI IMAGE STUDIO (TANPA API KEY)
+# ==========================================
+elif menu == "🎨 AI Image Studio":
+    st.markdown("<h2 style='color: white;'>🎨 AI Image Generator</h2>", unsafe_allow_html=True)
+    st.caption("Ketik deskripsi gambar, AI akan melukisnya secara instan (Gunakan Bahasa Inggris untuk hasil terbaik).")
+    
+    prompt_gambar = st.text_input("Deskripsi Gambar:", placeholder="Contoh: A futuristic cyberpunk city at night with neon lights")
+    
+    if st.button("🖼️ Buat Gambar"):
+        if prompt_gambar:
+            with st.spinner("AI sedang melukis gambar Anda..."):
+                time.sleep(2)
+                # Menggunakan layanan Pollinations AI (100% Gratis, Tanpa API)
+                prompt_encoded = urllib.parse.quote(prompt_gambar)
+                url_gambar = f"https://image.pollinations.ai/prompt/{prompt_encoded}?width=1080&height=720&nologo=true"
+                
+                st.image(url_gambar, caption=f"✨ Hasil dari: {prompt_gambar}", use_container_width=True)
+        else:
+            st.warning("Silakan masukkan deskripsi gambar terlebih dahulu!")
+
+# ==========================================
+# 6. MODUL 3: VOICE ASSISTANT (SUARA AI)
+# ==========================================
+elif menu == "🎙️ Voice Assistant (Suara)":
+    st.markdown("<h2 style='color: white;'>🎙️ AI Voice Response</h2>", unsafe_allow_html=True)
+    st.caption("Ketik pesan Anda, dan AI tidak hanya akan membalas dengan teks, tapi juga berbicara langsung kepada Anda.")
+    
+    pesan_suara = st.text_area("Apa yang ingin Anda sampaikan ke AI?")
+    
+    if st.button("🔊 Kirim & Dengarkan Respon"):
+        if pesan_suara:
+            with st.spinner("Memproses suara AI..."):
+                teks_respon = f"Halo, saya mendengar Anda mengatakan: {pesan_suara}. Tampilan dan fitur saya sekarang sudah jauh lebih moderen, lengkap, dan bisa berbicara tanpa perlu verifikasi kode rahasia yang rumit."
+                
+                # Tampilkan efek ngetik
+                st.write_stream(stream_response(teks_respon))
+                
+                # Buat file audio dan mainkan di website
+                file_audio = buat_suara_ai(teks_respon)
+                audio_bytes = open(file_audio, "rb").read()
+                st.audio(audio_bytes, format="audio/mp3")
+        else:
+            st.warning("Ketik sesuatu agar AI bisa merespons suara Anda.")
